@@ -127,7 +127,16 @@ async def list_tools() -> list[Tool]:
                     },
                     "rrule": {
                         "type": "string",
-                        "description": "Recurrence rule in RFC 5545 format, e.g. 'FREQ=WEEKLY;BYDAY=MO'.",
+                        "description": (
+                            "Recurrence rule in RFC 5545 RRULE format. "
+                            "Works with BOTH create_event and update_event. "
+                            "To make an event repeat weekly pass rrule='FREQ=WEEKLY'. "
+                            "Examples: weekly on Wednesday: 'FREQ=WEEKLY;BYDAY=WE', "
+                            "weekly on Saturday: 'FREQ=WEEKLY;BYDAY=SA', "
+                            "weekdays only: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', "
+                            "monthly: 'FREQ=MONTHLY'. "
+                            "To remove recurrence pass rrule=''."
+                        ),
                     },
                     "calendar_id": {
                         "type": "string",

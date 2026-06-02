@@ -1186,6 +1186,7 @@ async def do_manage_mcp(content: str, owner: Optional[str] = None) -> Dict:
             return {"error": "MCP manager not available", "exit_code": 1}
         try:
             await mcp.disconnect_server(sid)
+            # Try DB-registered servers first
             from core.database import SessionLocal, McpServer
             db2 = SessionLocal()
             try:
@@ -1194,9 +1195,25 @@ async def do_manage_mcp(content: str, owner: Optional[str] = None) -> Dict:
                     await mcp.connect_server(sid)
                     st = mcp.get_server_status(sid)
                     return {"response": f"Reconnected '{srv.name}' ({st.get('tool_count', 0)} tools)", "exit_code": 0}
-                return {"error": f"Server {sid} not found", "exit_code": 1}
             finally:
                 db2.close()
+            # Fall back to built-in servers
+            import sys, os
+            from src.builtin_mcp import _BUILTIN_SERVERS
+            if sid in _BUILTIN_SERVERS:
+                script_rel, name = _BUILTIN_SERVERS[sid]
+                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                script_path = os.path.join(base_dir, script_rel)
+                ok = await mcp.connect_server(
+                    server_id=sid, name=name, transport="stdio",
+                    command=sys.executable, args=[script_path],
+                    env={"PYTHONPATH": base_dir},
+                )
+                if ok:
+                    st = mcp.get_server_status(sid)
+                    return {"response": f"Reconnected built-in '{name}' ({st.get('tool_count', 0)} tools)", "exit_code": 0}
+                return {"error": f"Failed to reconnect built-in server '{sid}'", "exit_code": 1}
+            return {"error": f"Server '{sid}' not found (checked DB and built-ins)", "exit_code": 1}
         except Exception as e:
             return {"error": str(e), "exit_code": 1}
 
