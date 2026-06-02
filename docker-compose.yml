@@ -134,6 +134,54 @@ services:
       - NTFY_BASE_URL=${NTFY_BASE_URL:-http://localhost:8091}
     restart: unless-stopped
 
+  # ----------------------------------------------------------------
+  # odysseus-server profile — Mac Studio serving as inference backend.
+  # Starts the standard stack but binds Odysseus on 0.0.0.0 so the
+  # Windows laptop can reach /inference/v1/*. Ollama is NOT started here;
+  # run `ollama serve` on the host before starting this profile.
+  #
+  # Usage:
+  #   INFERENCE_SERVER_KEY=<token> docker compose --profile server up
+  # ----------------------------------------------------------------
+  odysseus-server:
+    build: .
+    profiles: [server]
+    ports:
+      - "0.0.0.0:${APP_PORT:-7000}:7000"
+    volumes:
+      - ./data:/app/data:z
+      - ./logs:/app/logs:z
+      - ./data/ssh:/app/.ssh:z
+      - ./data/huggingface:/app/.cache/huggingface:z
+      - ./data/local:/app/.local:z
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - INFERENCE_SERVER_MODE=server
+      - INFERENCE_SERVER_KEY=${INFERENCE_SERVER_KEY}
+      - INFERENCE_OLLAMA_HOST=host.docker.internal
+      - INFERENCE_OLLAMA_PORT=${INFERENCE_OLLAMA_PORT:-11434}
+      - LLM_HOST=${LLM_HOST:-localhost}
+      - LLM_HOSTS=${LLM_HOSTS:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
+      - SEARXNG_INSTANCE=http://searxng:8080
+      - CHROMADB_HOST=chromadb
+      - CHROMADB_PORT=8000
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./data/app.db}
+      - AUTH_ENABLED=${AUTH_ENABLED:-true}
+      - LOCALHOST_BYPASS=${LOCALHOST_BYPASS:-false}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost,http://127.0.0.1}
+      - SECURE_COOKIES=${SECURE_COOKIES:-false}
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+    depends_on:
+      searxng:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   searxng-data:
   chromadb-data:

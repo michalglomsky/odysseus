@@ -1,0 +1,22 @@
+# Odysseus data sync — what NOT to push to the sync repo.
+# Everything not listed here (app.db, settings.json, etc.) is synced.
+
+# Large / machine-specific caches — never sync these
+huggingface/
+local/
+.cache/
+
+# SSH keys — never commit private keys
+ssh/
+
+# Uploaded files — often large binaries, skip for now.
+# To sync uploads too, comment this line out.
+uploads/
+
+# Logs
+*.log
+logs/
+
+# OS noise
+.DS_Store
+Thumbs.db

@@ -698,6 +698,16 @@ app.include_router(setup_contacts_routes())
 from companion import setup_companion_routes
 app.include_router(setup_companion_routes())
 
+# Inference proxy — only active when INFERENCE_SERVER_MODE=server.
+# Forwards /inference/v1/* to local Ollama behind a Bearer token so the
+# Windows laptop can use Mac Studio as a remote inference backend without
+# exposing Ollama's port (11434) directly to the network.
+_inference_server_mode = os.getenv("INFERENCE_SERVER_MODE", "standalone").lower()
+if _inference_server_mode == "server":
+    from routes.inference_proxy import setup_inference_proxy_routes
+    app.include_router(setup_inference_proxy_routes())
+    logger.info("Inference proxy active — /inference/v1/* forwarded to local Ollama")
+
 # ========= ROUTES (kept in app.py) =========
 
 def _serve_html_with_nonce(request: Request, file_path: str) -> HTMLResponse:

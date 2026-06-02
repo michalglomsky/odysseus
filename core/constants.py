@@ -38,3 +38,14 @@ CLEANUP_INTERVAL_HOURS = int(os.getenv("CLEANUP_INTERVAL_HOURS", "24"))
 # Default parameters
 DEFAULT_TEMPERATURE = 1.0
 DEFAULT_MAX_TOKENS = 0
+
+# ============================================================
+# Inference proxy (distributed Mac Studio → Windows setup)
+# ============================================================
+# standalone: normal single-machine operation (default)
+# server:     expose /inference/v1/* proxy backed by local Ollama
+# client:     (informational) Windows Odysseus points ModelEndpoint at the server
+INFERENCE_SERVER_MODE = os.getenv("INFERENCE_SERVER_MODE", "standalone").lower()
+INFERENCE_SERVER_KEY = os.getenv("INFERENCE_SERVER_KEY", "")
+INFERENCE_OLLAMA_HOST = os.getenv("INFERENCE_OLLAMA_HOST", "localhost")
+INFERENCE_OLLAMA_PORT = int(os.getenv("INFERENCE_OLLAMA_PORT", "11434"))
