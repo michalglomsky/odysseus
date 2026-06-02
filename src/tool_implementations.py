@@ -1184,6 +1184,9 @@ async def do_manage_mcp(content: str, owner: Optional[str] = None) -> Dict:
         mcp = get_mcp_manager()
         if not mcp:
             return {"error": "MCP manager not available", "exit_code": 1}
+        from src.settings import get_setting
+        if not get_setting("allow_llm_mcp_edit", True):
+            return {"error": "MCP server editing is disabled by the admin. Enable it in Settings → Tools.", "exit_code": 1}
         try:
             await mcp.disconnect_server(sid)
             # Try DB-registered servers first

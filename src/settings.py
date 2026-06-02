@@ -133,6 +133,9 @@ DEFAULT_SETTINGS = {
         "Newsletters, marketing, automated digests, and FYI-only updates are "
         "NOT urgent."
     ),
+    # Allow the LLM agent to edit built-in MCP server files and hot-reload them.
+    # Disable this if you want to prevent the model from modifying tool code.
+    "allow_llm_mcp_edit": True,
     # Keyboard shortcuts (action: key combination)
     "keybinds": {
         "search": "ctrl+k",

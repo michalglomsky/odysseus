@@ -9,11 +9,13 @@ URL shape: DELETE /api/admin/wipe/{kind}
 Kinds: chats, memory, skills, notes, tasks, documents, gallery, calendar.
 """
 
+import asyncio
 import json
 import logging
 import os
 import shutil
-from fastapi import APIRouter, HTTPException, Request
+import sys
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 
 from core.middleware import require_admin
 from core.database import (
@@ -170,5 +172,19 @@ def setup_admin_wipe_routes(session_manager):
             raise HTTPException(500, f"Wipe {kind} failed: {e}")
         finally:
             db.close()
+
+    # ── Restart ──────────────────────────────────────────────────────────────
+    _restart_argv = [sys.executable] + sys.argv  # captured at import time
+
+    @router.post("/api/admin/restart")
+    async def restart_server(request: Request, background_tasks: BackgroundTasks):
+        require_admin(request)
+
+        async def _do_restart():
+            await asyncio.sleep(0.6)  # let the response reach the browser
+            os.execv(_restart_argv[0], _restart_argv)
+
+        background_tasks.add_task(_do_restart)
+        return {"status": "restarting"}
 
     return router

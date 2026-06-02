@@ -2035,9 +2035,52 @@ function initDangerZone() {
 /* ═══════════════════════════════════════════
    INIT & REFRESH
    ═══════════════════════════════════════════ */
+/* ── Restart Server ── */
+function initRestart() {
+  const btn = el('adm-restartBtn');
+  const msg = el('adm-restartMsg');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    if (!confirm('Restart the Odysseus server? The page will reload once it\'s back up.')) return;
+    btn.disabled = true; btn.textContent = 'Restarting…'; msg.textContent = '';
+    try {
+      await fetch('/api/admin/restart', { method: 'POST', credentials: 'same-origin' });
+    } catch (_) { /* expected — server closes the connection */ }
+    msg.textContent = 'Server restarting… reconnecting';
+    msg.className = 'admin-success';
+    // Poll until the server is back, then reload
+    const poll = async () => {
+      try {
+        const r = await fetch('/api/health', { credentials: 'same-origin' });
+        if (r.ok) { window.location.reload(); return; }
+      } catch (_) {}
+      setTimeout(poll, 1000);
+    };
+    setTimeout(poll, 1500);
+  });
+}
+
+/* ── MCP Self-Edit Toggle ── */
+function initMcpEditToggle() {
+  const chk = el('adm-allow-llm-mcp-edit');
+  if (!chk) return;
+  // Load current value from the admin settings endpoint
+  fetch('/api/auth/settings', { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(d => { chk.checked = d.allow_llm_mcp_edit !== false; })
+    .catch(() => {});
+  chk.addEventListener('change', () => {
+    fetch('/api/auth/settings', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ allow_llm_mcp_edit: chk.checked }),
+    }).catch(() => {});
+  });
+}
+
 function initAll() {
   modalEl = el('settings-modal');
-  const inits = [initSignupToggle, initAddUser, initEndpointForm, initMcpForm, initCalDAV, initBackup, initDangerZone, () => settingsModule.initIntegrations()];
+  const inits = [initSignupToggle, initAddUser, initEndpointForm, initMcpForm, initCalDAV, initBackup, initDangerZone, initRestart, initMcpEditToggle, () => settingsModule.initIntegrations()];
   for (const fn of inits) {
     try { fn(); } catch (e) { console.error('Admin init error in', fn.name || 'anonymous', e); }
   }
